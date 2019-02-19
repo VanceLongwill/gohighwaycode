@@ -13,10 +13,15 @@ func Generate(hwCode HighwayCode) *epub.Epub {
 	e.SetAuthor("GOV.UK")
 	e.SetLang("English")
 
+	css, cssErr := e.AddCSS("assets/css/style.css", "style.css")
+	if cssErr != nil {
+		log.Fatal(cssErr)
+	}
+
 	for index, chapter := range chapters {
 		for subIndex, section := range chapter.Sections {
 			title := fmt.Sprintf("%d.%d %s", index+1, subIndex+1, section.Title)
-			_, err := e.AddSection(section.Content.Inner, title, "", "")
+			_, err := e.AddSection(section.Content.Inner, title, "", css)
 			if err != nil {
 				log.Fatal(err)
 			}

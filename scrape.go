@@ -72,7 +72,7 @@ func getSections(link string) []Section {
 
 		var htmlContent string
 		untilNext.Each(func(ind int, selectedItem *goquery.Selection) {
-			htmlSelected, _ := selectedItem.Html()
+			htmlSelected, _ := goquery.OuterHtml(selectedItem)
 			htmlContent += htmlSelected
 		})
 

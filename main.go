@@ -65,4 +65,6 @@ func main() {
 		epub := Generate(hwCode)
 		epub.Write("highwaycode.epub")
 	}
+
+	fmt.Println("Done")
 }
