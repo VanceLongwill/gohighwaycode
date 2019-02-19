@@ -1,96 +1,68 @@
 package main
 
 import (
-	"encoding/json"
+	"encoding/xml"
+	"flag"
 	"fmt"
-	"github.com/PuerkitoBio/goquery"
 	"io/ioutil"
 	"log"
-	"time"
 )
-
-const (
-	baseURL = "https://www.gov.uk/guidance/the-highway-code"
-)
-
-type chapter struct {
-	Title    string    `json:"title"`
-	Summary  string    `json:"summary"`
-	URL      string    `json:"url"`
-	Sections []section `json:"sections"`
-}
-
-type section struct {
-	Title   string `json:"title"`
-	Content string `json:"content"`
-}
-
-func getChapters() []chapter {
-	doc, err := goquery.NewDocument(baseURL)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	foundChapters := doc.Find("article#content ol.section-list li a")
-	chapters := make([]chapter, foundChapters.Length())
-
-	foundChapters.Each(func(index int, item *goquery.Selection) {
-		link, _ := item.Attr("href")
-		chapters[index].URL = baseURL + link
-
-		spans := item.Find("span")
-		chapters[index].Title = spans.First().Text()
-		chapters[index].Summary = spans.Last().Text()
-	})
-
-	return chapters
-}
-
-func getSections(link string) []section {
-	doc, err := goquery.NewDocument(link)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	foundSections := doc.Find("div.gem-c-govspeak.govuk-govspeak h2")
-	sections := make([]section, foundSections.Length())
-
-	foundSections.Each(func(index int, item *goquery.Selection) {
-		sections[index].Title = item.Text()
-		var untilNext *goquery.Selection
-		if index == foundSections.Length()-1 {
-			untilNext = item.NextAll()
-		} else {
-			untilNext = item.NextUntilSelection(foundSections.Eq(index + 1))
-		}
-
-		htmlContent, _ := untilNext.Html()
-		sections[index].Content = htmlContent
-	})
-
-	return sections
-}
 
 func main() {
-	fmt.Println("Starting scrape")
+	outputFmt := flag.String("format", "", "generates a highway code book in specified the output format")
+	shouldUpdate := flag.Bool("update", false, "update fetches the latest highway code content")
+	xmlFn := flag.String("source", "highwayCode.xml", "specify a filename for the xml data source")
+	flag.Parse()
 
-	chapters := getChapters()
-	pause := time.Duration(100) * time.Millisecond
-
-	for _, chapter := range chapters {
-		chapter.Sections = getSections(chapter.URL)
-		time.Sleep(pause)
+	var shouldGenerate bool
+	switch *outputFmt {
+	case "epub":
+		shouldGenerate = true
+	default:
+		fmt.Println("Invalid output format")
+		shouldGenerate = false
 	}
 
-	json, jsonErr := json.Marshal(chapters)
-	if jsonErr != nil {
-		log.Fatal(jsonErr)
+	if !shouldGenerate && !*shouldUpdate {
+		flag.Usage()
+		return
 	}
 
-	fn := "highwayCode.json"
-	if err := ioutil.WriteFile(fn, json, 0644); err != nil {
-		log.Fatal(err)
+	var hwCode HighwayCode
+	if *shouldUpdate {
+		fmt.Print("Fetching highway code data from the gov uk site...")
+		hwCode = Scrape()
+		fmt.Println("Done")
+
+		highwayCodeXML, xmlErr := xml.MarshalIndent(hwCode, "", "  ")
+		if xmlErr != nil {
+			log.Fatal(xmlErr)
+		}
+
+		fmt.Printf("Saving highway code data to: %s ...", *xmlFn)
+		if err := ioutil.WriteFile(*xmlFn, highwayCodeXML, 0644); err != nil {
+			log.Fatal(err)
+		} else {
+			fmt.Println("Done")
+		}
 	} else {
-		fmt.Println("Done.")
+		fmt.Printf("Fetching highway code data from file: %s ...", *xmlFn)
+		rawXML, readErr := ioutil.ReadFile(*xmlFn)
+		if readErr != nil {
+			fmt.Println("Please run with -update flag to fetch the highway code data")
+			log.Fatal(readErr)
+		} else if len(rawXML) < 10 {
+			fmt.Println("Please run with -update flag to fetch the highway code data")
+		} else if err := xml.Unmarshal(rawXML, &hwCode); err != nil {
+			log.Fatal(err)
+		} else {
+			fmt.Println("Done")
+		}
+	}
+
+	if shouldGenerate {
+		fmt.Printf("Generating the highway code book in %s format ...", *outputFmt)
+		epub := Generate(hwCode)
+		epub.Write("highwaycode.epub")
 	}
 }
