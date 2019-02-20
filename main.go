@@ -18,6 +18,8 @@ func main() {
 	switch *outputFmt {
 	case "epub":
 		shouldGenerate = true
+	case "":
+		shouldGenerate = false
 	default:
 		fmt.Println("Invalid output format")
 		shouldGenerate = false

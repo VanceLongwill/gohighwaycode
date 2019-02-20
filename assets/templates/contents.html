@@ -1,0 +1,11 @@
+<h1>Contents</h1>
+{{ range .Chapters }}
+<h2>{{ .Title }}</h2>
+<ul>
+  {{ range .Sections }}
+  <li>
+    {{ .Title }}
+  </li>
+  {{ end }}
+</ul>
+{{ end }}
