@@ -5,13 +5,13 @@ CLI tool for generating an EPUB book of the highway code, lifted verbatum from t
 
 ## Downloads
 
-[Click here](raw/master/downloads/highwaycode.epub) to download the latest highway code EPUB
+[Click here](downloads/highwaycode.epub) to download the latest highway code EPUB
 
 ## Installation
 
 Either:
 
-- Download and unzip the executable [here](raw/master/downloads/gohighwaycode.zip), or
+- Download and unzip the executable [here](/downloads/gohighwaycode.zip), or
 - Build & install from source by cloning this repo and running `go install`
 
 ## Usage
