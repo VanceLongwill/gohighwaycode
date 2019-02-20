@@ -30,9 +30,6 @@ type chapterCover struct {
 	Title   string
 	Summary string
 }
-type contentsInfo struct {
-	Chapters []Chapter
-}
 
 func (t *templateHelper) chapter(title, summary string) (string, error) {
 	var buf bytes.Buffer
